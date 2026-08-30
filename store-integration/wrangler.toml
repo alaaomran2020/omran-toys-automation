@@ -11,6 +11,7 @@
 # ============================================================
 
 name = "omrantoys-store"
+account_id = "16e18ca29e464009c0b59cc37f48b67a"
 compatibility_date = "2025-06-01"
 
 # Worker API (new)
