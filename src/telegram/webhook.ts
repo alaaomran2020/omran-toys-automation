@@ -25,14 +25,14 @@ export function registerWebhookRoute(
   deps: { config: Config; db: Db; workflow: ProductWorkflow },
 ): void {
   app.post('/api/telegram/webhook', async (req, reply) => {
-    const body = req.body as { secret_token?: unknown } | null;
+    const secret = req.headers['x-telegram-bot-api-secret-token'];
 
-    const secret = body?.secret_token;
     if (typeof secret !== 'string' || !secureCompare(secret, deps.config.telegram.webhookSecret)) {
       req.log.warn('telegram webhook rejected: invalid secret_token');
       return reply.code(403).send({ error: 'unauthorized' });
     }
 
+    const body = req.body;
     if (!isValidUpdate(body)) {
       req.log.warn('telegram webhook rejected: invalid payload shape');
       return reply.code(400).send({ error: 'invalid payload' });
