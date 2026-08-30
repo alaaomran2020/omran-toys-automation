@@ -1,0 +1,11 @@
+{
+  "name": "omran-toys-store-integration",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Drop-in server-to-server Product API for omrantoys-store (Cloudflare Worker + D1) — see README.md",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "sql:smoke": "bash scripts/sql-smoke.sh"
+  }
+}

@@ -1,0 +1,34 @@
+# ============================================================
+# Omran Toys Automation — local / production compose
+#
+#   cp .env.example .env   # fill real values
+#   docker compose up -d --build
+#
+# The container must be reachable over HTTPS (Telegram webhook
+# requirement) — put it behind a reverse proxy / Cloudflare tunnel
+# and set PUBLIC_BASE_URL accordingly.
+# ============================================================
+services:
+  automation:
+    build: .
+    container_name: omran-toys-automation
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      DATABASE_PATH: /data/automation.db
+      STORAGE_DIR: /data/storage
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - automation-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  automation-data:

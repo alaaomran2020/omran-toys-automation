@@ -1,0 +1,30 @@
+{
+  "name": "omran-toys-automation",
+  "version": "1.0.0",
+  "description": "Telegram + AI product automation for Omran Toys (alaaomran2020/omrantoys-store)",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "biome check src tests scripts",
+    "lint:fix": "biome check --write src tests scripts",
+    "test": "node --import tsx --test \"tests/**/*.test.ts\"",
+    "webhook:setup": "node scripts/setup-webhook.mjs"
+  },
+  "dependencies": {
+    "fastify": "^5.4.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

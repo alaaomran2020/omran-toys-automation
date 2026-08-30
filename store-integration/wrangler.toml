@@ -1,0 +1,43 @@
+# ============================================================
+# Omran Toys Store — wrangler.toml (REPLACE the existing file)
+#
+# Changes vs current:
+#   1. main = "src/worker/index.js"  → Worker API + SPA assets
+#   2. binding = "ASSETS" under [assets]
+#   3. [vars] STORE_BASE_URL
+#
+# Secrets (NEVER in this file — set with `wrangler secret put`):
+#   STORE_API_KEY, STORE_API_SECRET
+# ============================================================
+
+name = "omrantoys-store"
+compatibility_date = "2025-06-01"
+
+# Worker API (new)
+main = "src/worker/index.js"
+
+# ============================================
+# الواجهة الأمامية (Vite build → ./dist)
+# ============================================
+[assets]
+directory = "./dist"
+# SPA: أي مسار غير موجود يُخدِم index.html (مطلوب لتطبيقات React ذات الواجهة الواحدة)
+not_found_handling = "single-page-application"
+# Worker API: تمرير الطلبات غير المطابقة إلى الـ Worker
+binding = "ASSETS"
+
+# ============================================
+# Cloudflare D1 Database (SQLite at the edge)
+# ============================================
+# أبقِ الـ database_id الحقيقي كما هو عندك. بعد النشر شغّل الميغريشن:
+#   npx wrangler d1 execute DB --remote --file=migrations/001_add_idempotency_key.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "omran-toys-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# ============================================
+# Variables (non-secret)
+# ============================================
+[vars]
+STORE_BASE_URL = "https://omrantoys.store"

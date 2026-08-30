@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Local data (SQLite + product images) — never commit
+data/
+storage/
+
+# Environment — real secrets never in Git
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+coverage/
+test-tmp/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Cloudflare
+.wrangler/
