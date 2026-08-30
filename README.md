@@ -234,6 +234,10 @@ npm test
 المتجر (tests/helpers/fakeStoreServer.ts) — وكود الـ Worker نفسه له اختبارات
 مستقلة في `store-integration/tests/`.
 
+**CI:** مخطط GitHub Actions جاهز في `ci/ci.yml` (Typecheck → Lint → Tests →
+Build + اختبارات Worker). للتفعيل انسخه إلى `.github/workflows/ci.yml`
+(من صاحب الـ Repo — بوت الـ Arena بلا صلاحية `workflows`).
+
 ## 🚢 Deployment
 
 ```bash

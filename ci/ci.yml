@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  automation:
+    name: Typecheck · Lint · Tests · Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests (unit + integration + e2e)
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+  store-integration:
+    name: Store Worker contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The Worker is plain ESM with zero dependencies — no install needed.
+      - name: Worker contract tests
+        run: node --test "store-integration/tests/**/*.test.mjs"
