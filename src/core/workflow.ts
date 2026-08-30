@@ -132,7 +132,7 @@ export class ProductWorkflow {
       return;
     }
     if (message?.photo && message.photo.length > 0) {
-      const photo = message.photo[0];
+      const photo = message.photo[message.photo.length - 1];
       if (photo) await this.handlePhoto(chatId, fromId, photo);
       return;
     }
@@ -182,7 +182,7 @@ export class ProductWorkflow {
       return;
     }
 
-    const mimeType = photo.mime_type ?? '';
+    const mimeType = photo.mime_type ?? 'image/jpeg';
     if (mimeType !== 'image/jpeg' && mimeType !== 'image/png' && mimeType !== 'image/webp') {
       await this.safeSend(chatId, T.UNSUPPORTED_MESSAGE);
       return;

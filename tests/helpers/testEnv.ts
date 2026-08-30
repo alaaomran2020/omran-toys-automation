@@ -254,7 +254,8 @@ export async function sendUpdate(app: FastifyInstance, update: unknown, secret =
   return app.inject({
     method: 'POST',
     url: '/api/telegram/webhook',
-    payload: { ...(update as object), secret_token: secret },
+    headers: { 'x-telegram-bot-api-secret-token': secret },
+    payload: update as object,
   });
 }
 
