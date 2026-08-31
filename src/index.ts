@@ -71,11 +71,15 @@ async function handleTelegramWebhook(request: Request, env: Env): Promise<Respon
 
   // D1's primary key makes Telegram retries idempotent. Keep only the update ID
   // at ingress to minimize edge memory, storage, and exposure of message data.
-  await env.DB.prepare(
-    "INSERT OR IGNORE INTO webhook_updates (update_id, received_at) VALUES (?, datetime('now'))",
-  )
-    .bind(update.update_id)
-    .run();
+  try {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO webhook_updates (update_id, received_at) VALUES (?, datetime('now'))",
+    )
+      .bind(update.update_id)
+      .run();
+  } catch (dbError) {
+    console.error('Database write error (ignoring for webhook response):', dbError);
+  }
 
   return json({ ok: true });
 }
