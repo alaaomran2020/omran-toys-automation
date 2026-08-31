@@ -35,7 +35,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "omran-toys-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "6471bcf0-7bf7-4de6-8858-0463c8ff2b31"
 
 # ============================================
 # Variables (non-secret)
