@@ -18,11 +18,31 @@ interface AssetsBinding {
 export interface Env {
   DB: D1Database;
   ASSETS: AssetsBinding;
+  TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_WEBHOOK_SECRET: string;
+}
+
+interface TelegramUser {
+  id: number;
+  first_name?: string;
+  username?: string;
+}
+
+interface TelegramChat {
+  id: number;
+  type: string;
+}
+
+interface TelegramMessage {
+  message_id: number;
+  from?: TelegramUser;
+  chat: TelegramChat;
+  text?: string;
 }
 
 interface TelegramUpdate {
   update_id: number;
+  message?: TelegramMessage;
 }
 
 const JSON_HEADERS = {
@@ -47,6 +67,15 @@ function secureEqual(left: string, right: string): boolean {
   return difference === 0;
 }
 
+async function sendTelegramMessage(token: string, chatId: number, text: string): Promise<void> {
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text }),
+  });
+}
+
 async function handleTelegramWebhook(request: Request, env: Env): Promise<Response> {
   const suppliedSecret = request.headers.get('x-telegram-bot-api-secret-token') ?? '';
   if (!env.TELEGRAM_WEBHOOK_SECRET || !secureEqual(suppliedSecret, env.TELEGRAM_WEBHOOK_SECRET)) {
@@ -69,8 +98,7 @@ async function handleTelegramWebhook(request: Request, env: Env): Promise<Respon
     return json({ error: 'invalid Telegram update' }, 400);
   }
 
-  // D1's primary key makes Telegram retries idempotent. Keep only the update ID
-  // at ingress to minimize edge memory, storage, and exposure of message data.
+  // حفظ التحديث في قاعدة البيانات
   try {
     await env.DB.prepare(
       "INSERT OR IGNORE INTO webhook_updates (update_id, received_at) VALUES (?, datetime('now'))",
@@ -78,7 +106,27 @@ async function handleTelegramWebhook(request: Request, env: Env): Promise<Respon
       .bind(update.update_id)
       .run();
   } catch (dbError) {
-    console.error('Database write error (ignoring for webhook response):', dbError);
+    console.error('Database write error:', dbError);
+  }
+
+  // الرد الفوري على رسائل المستخدم في تليجرام
+  if (update.message && update.message.chat && update.message.text) {
+    const chatId = update.message.chat.id;
+    const text = update.message.text.trim();
+
+    if (text.startsWith('/start')) {
+      await sendTelegramMessage(
+        env.TELEGRAM_BOT_TOKEN,
+        chatId,
+        'أهلاً بك يا ألاء! تم استلام رسالتك بنجاح، وخادم أتمتة Omran Toys يعمل بكفاءة تامة على Cloudflare.'
+      );
+    } else {
+      await sendTelegramMessage(
+        env.TELEGRAM_BOT_TOKEN,
+        chatId,
+        `لقد استلمت رسالتك: "${text}"`
+      );
+    }
   }
 
   return json({ ok: true });
@@ -107,7 +155,6 @@ export default {
         return await handleApi(request, env);
       }
 
-      // Cloudflare Assets handles files and SPA navigation fallback natively.
       return await env.ASSETS.fetch(request);
     } catch (error) {
       console.error('request failed', error instanceof Error ? error.message : String(error));
