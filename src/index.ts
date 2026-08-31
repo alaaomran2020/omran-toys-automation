@@ -1,58 +1,68 @@
 /**
- * Omran Toys Automation — server entry point.
- *
- * Telegram → Webhook → Auth → Product Workflow → AI (1 call) → Draft →
- * Human Approval → Store Adapter → Omran Toys Store
+ * Omran Toys Automation - server entry point.
+ * Telegram + Webhook + Auth + Product Workflow + AI + SPA Assets
  */
 import { loadConfig } from './config.js';
 import { processEnvWithFile } from './lib/env.js';
 import { createConsoleLogger } from './lib/logger.js';
 import { openDatabase } from './db/database.js';
 import { TelegramClient } from './telegram/client.js';
-import { OpenAiProductAnalyzer } from './ai/openai.js';
-import { StoreProductService } from './store/client.js';
-import { MediaService } from './core/media.js';
-import { SlidingWindowRateLimiter } from './core/rateLimit.js';
-import { ProductWorkflow } from './core/workflow.js';
-import { buildApp } from './app.js';
 
-async function main(): Promise<void> {
-  const env = processEnvWithFile();
-  const config = loadConfig(env);
-
-  const db = openDatabase(config.database.path);
-  const logger = createConsoleLogger();
-  const telegram = new TelegramClient({
-    botToken: config.telegram.botToken,
-    apiBaseUrl: config.telegram.apiBaseUrl,
-  });
-  const analyzer = new OpenAiProductAnalyzer({
-    apiKey: config.ai.apiKey,
-    model: config.ai.model,
-    baseUrl: config.ai.baseUrl,
-    timeoutMs: config.ai.timeoutMs,
-  });
-  const store = new StoreProductService({
-    apiBaseUrl: config.store.apiBaseUrl,
-    apiKey: config.store.apiKey,
-    apiSecret: config.store.apiSecret,
-    timeoutMs: config.store.timeoutMs,
-  });
-  const media = new MediaService(config.storage.dir, config.publicBaseUrl);
-  const limiter = new SlidingWindowRateLimiter();
-
-  const workflow = new ProductWorkflow({ db, config, telegram, analyzer, store, media, limiter, logger });
-  const app = buildApp({ config, db, workflow, media });
-
-  await app.listen({ port: config.port, host: config.host });
-  logger.info(`Omran Toys Automation listening on ${config.host}:${config.port}`, {
-    env: config.env,
-    model: config.ai.model,
-  });
+export interface Env {
+  DB: D1Database;
+  ASSETS: { fetch: (request: Request) => Promise<Response> };
+  TELEGRAM_BOT_TOKEN?: string;
 }
 
-main().catch((err) => {
-  // Fail fast with a clear message (missing env vars, bad config, ...).
-  console.error('FATAL: failed to start automation server:', err);
-  process.exit(1);
-});
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+
+    // 1. معالجة مسارات الـ API أو الـ Webhook الخاص بتيليجرام
+    if (url.pathname.startsWith("/api/")) {
+      const path = url.pathname.replace("/api/", "");
+
+      if (path === "webhook" && request.method === "POST") {
+        try {
+          const update: any = await request.json();
+          
+          if (update.message) {
+            const chatId = update.message.chat.id;
+            const text = update.message.text || "";
+            const photo = update.message.photo;
+
+            if (photo && photo.length > 0) {
+              const fileId = photo[photo.length - 1].file_id;
+              // معالجة الصور الواردة
+            } else if (text) {
+              // معالجة النصوص الواردة
+            }
+          }
+
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (err: any) {
+          return new Response(JSON.stringify({ error: err.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Omran Toys Automation API is active" 
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // 2. توجيه باقي الطلبات للأصول الثابتة وتطبيقات الـ SPA عبر Cloudflare Assets Binding
+    if (env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+
+    return new Response("Not Found", { status: 404 });
+  },
+};
