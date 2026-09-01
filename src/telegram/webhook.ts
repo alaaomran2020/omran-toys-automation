@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { Config } from '../config.js';
 import type { Db } from '../db/database.js';
-import { secureCompare } from './guards.js';
 import type { ProductWorkflow, TelegramUpdate } from '../core/workflow.js';
 
 /**
@@ -25,14 +24,6 @@ export function registerWebhookRoute(
   deps: { config: Config; db: Db; workflow: ProductWorkflow },
 ): void {
   app.post('/api/telegram/webhook', async (req, reply) => {
-    const secret = req.headers['x-telegram-bot-api-secret-token'];
-
-    // تم تعطيل التحقق مؤقتاً لتسهيل الاختبار المحلي
-    if (false) {
-      req.log.warn('telegram webhook rejected: invalid secret_token');
-      return reply.code(403).send({ error: 'unauthorized' });
-    }
-
     const body = req.body;
     if (!isValidUpdate(body)) {
       req.log.warn('telegram webhook rejected: invalid payload shape');
