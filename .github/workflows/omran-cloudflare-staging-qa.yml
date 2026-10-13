@@ -1,0 +1,38 @@
+name: Omran Cloudflare Staging QA
+on:
+  pull_request:
+    paths:
+      - "cloudflare-workflows/**"
+      - ".github/workflows/omran-cloudflare-staging-qa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Parse Cloudflare Worker JavaScript
+        run: node --check cloudflare-workflows/src/index.js
+      - name: Verify isolated configuration and database schema
+        shell: python
+        run: |
+          import json, pathlib, sqlite3
+          root = pathlib.Path("cloudflare-workflows")
+          config = json.loads((root/"wrangler.jsonc").read_text())
+          assert config["name"] == "omran-automation-staging"
+          assert [x["database_name"] for x in config["d1_databases"]] == ["omran-automation-staging-db"]
+          assert {x["name"] for x in config["workflows"]} == {"omran-intake-staging", "omran-catalog-preview-staging"}
+          conn = sqlite3.connect(":memory:")
+          conn.executescript((root/"migrations/0001_initial.sql").read_text())
+          tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+          assert {"drafts", "audit_log", "catalog_preview"} <= tables
+          source = (root/"src/index.js").read_text()
+          assert "STAGED_ONLY" in source and "ADMIN_API_TOKEN" in source
+          assert "omran-store-live" not in source and "api.github.com" not in source
+          print("PASS: isolated configuration, JS syntax and staging SQL schema.")
