@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "omran-automation-staging",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "omran-automation-staging-db",
+      "database_id": "a96520ec-d442-4226-bda8-aa44f3655839",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "INTAKE",
+      "name": "omran-intake-staging",
+      "class_name": "IntakeWorkflow"
+    },
+    {
+      "binding": "CATALOG",
+      "name": "omran-catalog-preview-staging",
+      "class_name": "CatalogPreviewWorkflow"
+    }
+  ]
+}
