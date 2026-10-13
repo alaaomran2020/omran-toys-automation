@@ -1,0 +1,30 @@
+name: OMRAN Staging Approval Gate
+
+on:
+  pull_request:
+    paths:
+      - 'staging-ops/**'
+      - '.github/workflows/omran-staging-approval-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-staging-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test fail-closed approval decision
+        run: node --test staging-ops/approvalGate.test.mjs
+      - name: Assert no production deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -f staging-ops/wrangler.toml
+          test ! -f staging-ops/wrangler.jsonc
+          ! grep -Eq 'wrangler[[:space:]]+(deploy|pages[[:space:]]+deploy)' .github/workflows/omran-staging-approval-gate.yml
